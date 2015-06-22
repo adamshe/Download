@@ -1,0 +1,68 @@
+﻿<UserControl x:Class="TreeViewWithCheckBoxes.TreeViewCheckBoxListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:v4="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"  
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TreeViewWithCheckBoxes"
+             xmlns:dw="clr-namespace:DrWPF.Windows.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+
+        <ResourceDictionary>
+            <!-- Load this specific theme because the Aero theme for CheckBox has issues. -->
+            <!--<ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/PresentationFramework.Royale;V4.0.30319.34209;31bf3856ad364e35;component\themes\royale.normalcolor.xaml" />
+            </ResourceDictionary.MergedDictionaries>-->
+
+            <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
+                <Setter Property="IsExpanded" Value="True" />
+                <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
+                <Setter Property="KeyboardNavigation.AcceptsReturn" Value="True" />
+                <Setter Property="dw:VirtualToggleButton.IsVirtualToggleButton" Value="True" />
+                <Setter Property="dw:VirtualToggleButton.IsChecked" Value="{Binding IsChecked}" />
+            </Style>
+
+            <HierarchicalDataTemplate  x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
+                <StackPanel Orientation="Horizontal">
+                    <!-- These elements are bound to a FooViewModel object. -->
+                    <CheckBox
+            Focusable="False" 
+            IsChecked="{Binding IsChecked}" 
+            VerticalAlignment="Center"
+            />
+                    <ContentPresenter 
+            Content="{Binding Name, Mode=OneTime}" 
+            Margin="2,0"
+            />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <!--<UserControl.DataContext>
+        <ObjectDataProvider 
+      MethodName="CreateFoos"
+      ObjectType="{x:Type local:EntityViewModel}"      
+      
+            />
+    </UserControl.DataContext>-->
+    <Grid>
+        <DockPanel>
+            <Button x:Name="toggleButton"
+      DockPanel.Dock="Bottom" 
+      Command="Undo"
+      Content="Uncheck All" 
+      HorizontalAlignment="Center"
+      Margin="0,2"
+      Padding="8,0"
+      />
+            <TreeView 
+      x:Name="tree"
+      ItemContainerStyle="{StaticResource TreeViewItemStyle}"
+      ItemsSource="{Binding Mode=OneTime}"
+      ItemTemplate="{StaticResource CheckBoxItemTemplate}"
+      />
+        </DockPanel>
+    </Grid>
+</UserControl>
