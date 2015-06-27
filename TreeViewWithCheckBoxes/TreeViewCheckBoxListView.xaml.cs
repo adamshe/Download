@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -13,14 +15,23 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+
 namespace TreeViewWithCheckBoxes
 {
     /// <summary>
     /// Interaction logic for TreeViewCheckBoxList.xaml
     /// </summary>
-    public partial class TreeViewCheckBoxListView : UserControl
+    public partial class TreeViewCheckBoxListView : UserControl, INotifyPropertyChanged
     {
-        List<EntityViewModel<IPortfolioInfo>> _list;
+        #region Search
+        
+        private readonly ICommand _storeInPreviousCommand;
+        private string selectedCriteria = String.Empty;
+        private string currentCriteria = String.Empty;
+        private readonly ObservableCollection<string> _previousCriteria = new ObservableCollection<string>();
+        #endregion
+
+        ObservableCollection<EntityViewModel<IPortfolioInfo>> _root;
         Func<IPortfolioInfo, string> _filter;
         IEnumerable<IPortfolioInfo> _portfolioList;
         public static readonly DependencyProperty ItemsSourceProperty =
@@ -38,10 +49,59 @@ namespace TreeViewWithCheckBoxes
             _portfolioList = portlist; 
             _filter = port => port.Name.Substring(0, port.Name.IndexOf(' '));
             this.Loaded += TreeViewCheckBoxListView_Loaded;
+            _storeInPreviousCommand = new CustomCommand(StoreInPrevious);
             InitializeComponent();
-           
-           
+                      
            // DataContext = GetList(portList, port => port.Name.Substring(0, port.Name.IndexOf(' ')));
+        }
+
+        private void StoreInPrevious(object dummy)
+        {
+            if (String.IsNullOrEmpty(CurrentCriteria))
+                return;
+
+            if (!_previousCriteria.Contains(CurrentCriteria))
+                _previousCriteria.Add(CurrentCriteria);
+
+            SelectedCriteria = CurrentCriteria;
+        }
+
+        public string SelectedCriteria
+        {
+            get { return selectedCriteria; }
+            set
+            {
+                if (value == selectedCriteria)
+                    return;
+
+                selectedCriteria = value;
+                OnPropertyChanged("SelectedCriteria");
+            }
+        }
+
+        public IEnumerable<string> PreviousCriteria
+        {
+            get { return _previousCriteria; }
+        }
+
+        public string CurrentCriteria
+        {
+            get { return currentCriteria; }
+            set
+            {
+                if (value == currentCriteria)
+                    return;
+
+                currentCriteria = value;
+                OnPropertyChanged("CurrentCriteria");
+                ApplyFilter();
+            }
+        }
+
+        private void ApplyFilter()
+        {
+            foreach (var node in _root)
+                node.ApplyCriteria(CurrentCriteria, new Stack<EntityViewModel<IPortfolioInfo>>());
         }
 
         void TreeViewCheckBoxListView_Loaded(object sender, RoutedEventArgs e)
@@ -53,12 +113,23 @@ namespace TreeViewWithCheckBoxes
         {
             get { return _portfolioList; }
             set { _portfolioList = value;
-                ItemsSource = GetList;
+                _root = GetList;
                 tree.GetBindingExpression(TreeView.ItemsSourceProperty).UpdateTarget();
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
-        public IEnumerable<EntityViewModel<IPortfolioInfo>> GetList
+        public ICommand StoreInPreviousCommand
+        {
+            get { return _storeInPreviousCommand; }
+        }
+
+        public IEnumerable<EntityViewModel<IPortfolioInfo>> Root
+        {
+            get { return _root; }
+        }
+
+        public ObservableCollection<EntityViewModel<IPortfolioInfo>> GetList
         {
             get
             {
@@ -79,8 +150,8 @@ namespace TreeViewWithCheckBoxes
                 }
 
                 root.Initialize();
-                _list = new List<EntityViewModel<IPortfolioInfo>> { root };
-                return _list;
+                _root = new ObservableCollection<EntityViewModel<IPortfolioInfo>> { root };
+                return _root;
             }           
         }
 
@@ -88,7 +159,7 @@ namespace TreeViewWithCheckBoxes
         {
             get
             {
-                var list= _list.Where ( box => (box.IsChecked.HasValue && box.IsChecked.Value == true));
+                var list= _root.Where ( box => (box.IsChecked.HasValue && box.IsChecked.Value == true));
                 return list.Select(box => box.Entity);
             }           
         }
@@ -130,22 +201,42 @@ namespace TreeViewWithCheckBoxes
 
         private void tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            e.Handled = true;
             IInputElement element = sender as IInputElement;
             if (e.OldValue != null && e.OldValue != e.NewValue)
             {
                 var source = ((TreeView)e.Source).SelectedItem as EntityViewModel<IPortfolioInfo>;
                 if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                 {
-                   
-                    source.IsChecked = !source.IsChecked;
-                    return;
+                    if (Keyboard.IsKeyDown(Key.Up) || Keyboard.IsKeyDown(Key.Down))
+                    {
+                        source.IsChecked = !source.IsChecked;
+                    }
                 }
-                if (Keyboard.IsKeyDown(Key.Up) || Keyboard.IsKeyDown(Key.Down))
-                {
-                    return;
-                }
-                source.IsChecked = !source.IsChecked;
             }
+        }       
+
+        
+        private void TreeViewItemClick(object sender, RoutedEventArgs e)
+        {
+            if (e.Source is ContentPresenter)
+            {
+                var source = ((ContentPresenter)e.Source).Content as EntityViewModel<IPortfolioInfo>;
+                if (source != null)
+                {
+                    source.IsChecked = !source.IsChecked;
+                    //e.Handled = true;
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            var handler = PropertyChanged;
+            if (handler != null)
+                handler(this, new PropertyChangedEventArgs(propertyName));
         }
             //public bool? ToggleState (bool? state)
             //{

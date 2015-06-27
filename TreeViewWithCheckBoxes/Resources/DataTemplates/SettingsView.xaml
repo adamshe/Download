@@ -1,0 +1,26 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:Bornander.UI.ViewModels"
+                    xmlns:i="clr-namespace:TreeViewWithCheckBoxes">
+    <DataTemplate x:Key="searchBox1" >
+        <Grid>
+            <TreeView Style="{StaticResource ResourceKey=SearchableTreeView}" ItemsSource="{Binding Path=Roots, Mode=OneWay}" Background="Transparent"/>
+            <Border Style="{StaticResource ResourceKey=searchBox}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Image Grid.Column="0" Source="pack://application:,,,/Resources/Images/Search.png"/>
+                    <ComboBox Grid.Column="1"
+                              IsEditable="True"
+                              ItemsSource="{Binding Path=PreviousCriteria, Mode=OneWay}"
+                              SelectedItem="{Binding Path=SelectedCriteria}"
+                              Text="{Binding Path=CurrentCriteria, UpdateSourceTrigger=PropertyChanged}"
+                              i:EventCommand.Event="UIElement.KeyDown"
+                              i:EventCommand.Command="{Binding Path=StoreInPreviousCommand, Mode=OneWay}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>

@@ -80,6 +80,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Resources\DataTemplates\SettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="TreeViewCheckBoxListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -94,6 +98,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Behaviors\CustomCommand.cs" />
+    <Compile Include="Behaviors\EventCommand.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="GroupTreeNodeViewModel.cs" />
     <Compile Include="IPortfolioInfo.cs" />
@@ -102,6 +108,8 @@
     <Compile Include="TreeViewCheckBoxListView.xaml.cs">
       <DependentUpon>TreeViewCheckBoxListView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ValueConverters\BooleanToVisiblityConverter.cs" />
+    <Compile Include="ValueConverters\TreeNodeToImageConverter.cs" />
     <Compile Include="Window1.xaml.cs">
       <DependentUpon>Window1.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -145,6 +153,18 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Images\Search.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Images\Application.ico" />
+    <Resource Include="Resources\Images\Archive.png" />
+    <Resource Include="Resources\Images\Executable.png" />
+    <Resource Include="Resources\Images\Folder.png" />
+    <Resource Include="Resources\Images\Picture.png" />
+    <Resource Include="Resources\Images\Properties.png" />
+    <Resource Include="Resources\Images\Text.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

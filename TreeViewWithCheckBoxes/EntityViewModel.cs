@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-
+using System.Linq;
 namespace TreeViewWithCheckBoxes
 {
     public class EntityViewModel<T> : INotifyPropertyChanged
@@ -8,6 +9,8 @@ namespace TreeViewWithCheckBoxes
         #region Data
 
         bool? _isChecked = false;
+        bool _expanded;
+        bool _isMatched = true;
         EntityViewModel<T> _parent;
         T _entity;
        // List<EntityViewModel<T>> _list;
@@ -16,47 +19,47 @@ namespace TreeViewWithCheckBoxes
 
         #region CreateFoos
 
-        public static List<EntityViewModel<T>> CreateFoos()
-        {
-            EntityViewModel<T> root = new EntityViewModel<T>("Weapons")
-            {
-                IsInitiallySelected = true,
-                Children =
-                {
-                    new EntityViewModel<T>("Blades")
-                    {
-                        Children =
-                        {
-                            new EntityViewModel<T>("Dagger"),
-                            new EntityViewModel<T>("Machete"),
-                            new EntityViewModel<T>("Sword"),
-                        }
-                    },
-                    new EntityViewModel<T>("Vehicles")
-                    {
-                        Children =
-                        {
-                            new EntityViewModel<T>("Apache Helicopter"),
-                            new EntityViewModel<T>("Submarine"),
-                            new EntityViewModel<T>("Tank"),                            
-                        }
-                    },
-                    new EntityViewModel<T>("Guns")
-                    {
-                        Children =
-                        {
-                            new EntityViewModel<T>("AK 47"),
-                            new EntityViewModel<T>("Beretta"),
-                            new EntityViewModel<T>("Uzi"),
-                        }
-                    },
-                }
-            };
+        //public static List<EntityViewModel<T>> CreateFoos()
+        //{
+        //    EntityViewModel<T> root = new EntityViewModel<T>("Weapons")
+        //    {
+        //        IsInitiallySelected = true,
+        //        Children =
+        //        {
+        //            new EntityViewModel<T>("Blades")
+        //            {
+        //                Children =
+        //                {
+        //                    new EntityViewModel<T>("Dagger"),
+        //                    new EntityViewModel<T>("Machete"),
+        //                    new EntityViewModel<T>("Sword"),
+        //                }
+        //            },
+        //            new EntityViewModel<T>("Vehicles")
+        //            {
+        //                Children =
+        //                {
+        //                    new EntityViewModel<T>("Apache Helicopter"),
+        //                    new EntityViewModel<T>("Submarine"),
+        //                    new EntityViewModel<T>("Tank"),                            
+        //                }
+        //            },
+        //            new EntityViewModel<T>("Guns")
+        //            {
+        //                Children =
+        //                {
+        //                    new EntityViewModel<T>("AK 47"),
+        //                    new EntityViewModel<T>("Beretta"),
+        //                    new EntityViewModel<T>("Uzi"),
+        //                }
+        //            },
+        //        }
+        //    };
 
-            root.Initialize();
-            var list = new List<EntityViewModel<T>> { root };
-            return list;
-        }
+        //    root.Initialize();
+        //    var list = new List<EntityViewModel<T>> { root };
+        //    return list;
+        //}
 
         public EntityViewModel(string name)
         {
@@ -94,7 +97,18 @@ namespace TreeViewWithCheckBoxes
 
         public T Entity { get; private set; }
 
-        public bool IsMatched { get; set; }
+        public bool IsMatched
+        {
+            get { return _isMatched; }
+            set
+            {
+                if (value == _isMatched)
+                    return;
+
+                _isMatched = value;
+                OnPropertyChanged("IsMatched");
+            }
+        }
 
         #region IsChecked
 
@@ -109,6 +123,52 @@ namespace TreeViewWithCheckBoxes
         {
             get { return _isChecked; }
             set { this.SetIsChecked(value, true, true); }
+        }
+
+        public bool IsExpanded
+        {
+            get { return _expanded; }
+            set
+            {
+                if (value == _expanded)
+                    return;
+
+                _expanded = value;
+                if (_expanded)
+                {
+                    foreach (var child in Children)
+                        child.IsMatched = true;
+                }
+                OnPropertyChanged("IsExpanded");
+            }
+        }
+
+        private bool IsCriteriaMatched(string criteria)
+        {
+            var listOfStrings = criteria.Split(new char[] { ';', ',', '-', '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            return String.IsNullOrEmpty(criteria) || listOfStrings.Any(s => Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0);//(name.Contains(criteria);
+        }
+
+        public void ApplyCriteria(string criteria, Stack<EntityViewModel<T>> ancestors)
+        {
+            if (IsCriteriaMatched(criteria))
+            {
+                IsMatched = true;
+                foreach (var ancestor in ancestors)
+                {
+                    ancestor.IsMatched = true;
+                    ancestor.IsExpanded = !String.IsNullOrEmpty(criteria);
+                }
+            }
+            else
+                IsMatched = false;
+
+            ancestors.Push(this);
+            foreach (var child in Children)
+                child.ApplyCriteria(criteria, ancestors);
+
+            ancestors.Pop();
         }
 
         void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
@@ -160,7 +220,6 @@ namespace TreeViewWithCheckBoxes
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        private string p;
 
         #endregion
     }
