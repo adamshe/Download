@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,37 +21,67 @@ namespace TreeViewWithCheckBoxes
     public partial class TreeViewCheckBoxListView : UserControl
     {
         List<EntityViewModel<IPortfolioInfo>> _list;
-        public TreeViewCheckBoxListView(IEnumerable<IPortfolioInfo> portList)
+        Func<IPortfolioInfo, string> _filter;
+        IEnumerable<IPortfolioInfo> _portfolioList;
+        public static readonly DependencyProperty ItemsSourceProperty =
+        DependencyProperty.Register("ItemsSource", typeof(IEnumerable),
+        typeof(TreeViewCheckBoxListView), new FrameworkPropertyMetadata(null));
+
+        public IEnumerable ItemsSource
         {
+            get { return (IEnumerable) GetValue(ItemsSourceProperty); }
+            set { SetValue(ItemsSourceProperty, value); }
+        }
+
+        public TreeViewCheckBoxListView(IEnumerable<IPortfolioInfo> portlist)
+        {
+            _portfolioList = portlist; 
+            _filter = port => port.Name.Substring(0, port.Name.IndexOf(' '));
             this.Loaded += TreeViewCheckBoxListView_Loaded;
             InitializeComponent();
-            DataContext = GetList(portList, port => port.Name.Substring(0, port.Name.IndexOf(' ')));
+           
+           
+           // DataContext = GetList(portList, port => port.Name.Substring(0, port.Name.IndexOf(' ')));
         }
 
         void TreeViewCheckBoxListView_Loaded(object sender, RoutedEventArgs e)
         {
-            WireUpToggleButton();
+           // WireUpToggleButton();
         }
 
-        private List<EntityViewModel<IPortfolioInfo>> GetList(IEnumerable<IPortfolioInfo> portList, Func<IPortfolioInfo, string> filter)
+        public IEnumerable<IPortfolioInfo> PortfolioList
         {
-            IEnumerable<IGrouping<string, IPortfolioInfo>> query = portList.GroupBy(filter);
-            var root = new EntityViewModel<IPortfolioInfo>("Portfolios") { IsInitiallySelected = true };
-            foreach (var group in query)
-            {
-                var key = group.Key;
-                var portGroup = new EntityViewModel<IPortfolioInfo>(key);
-                root.Children.Add(portGroup);
-                foreach (var portName in group)
-                {
-                    var port = new EntityViewModel<IPortfolioInfo>(portName);
-                    portGroup.Children.Add(port);
-                }
+            get { return _portfolioList; }
+            set { _portfolioList = value;
+                ItemsSource = GetList;
+                tree.GetBindingExpression(TreeView.ItemsSourceProperty).UpdateTarget();
             }
+        }
 
-            root.Initialize();
-            _list = new List<EntityViewModel<IPortfolioInfo>> { root };
-            return _list;
+        public IEnumerable<EntityViewModel<IPortfolioInfo>> GetList
+        {
+            get
+            {
+                if (PortfolioList == null)
+                    return null;
+                IEnumerable<IGrouping<string, IPortfolioInfo>> query = PortfolioList.GroupBy(_filter);
+                var root = new EntityViewModel<IPortfolioInfo>("Portfolios") { IsInitiallySelected = true };
+                foreach (var group in query)
+                {
+                    var key = group.Key;
+                    var portGroup = new EntityViewModel<IPortfolioInfo>(key);
+                    root.Children.Add(portGroup);
+                    foreach (var portName in group)
+                    {
+                        var port = new EntityViewModel<IPortfolioInfo>(portName);
+                        portGroup.Children.Add(port);
+                    }
+                }
+
+                root.Initialize();
+                _list = new List<EntityViewModel<IPortfolioInfo>> { root };
+                return _list;
+            }           
         }
 
         private IEnumerable<IPortfolioInfo> SelectedPortfolios
@@ -96,6 +127,26 @@ namespace TreeViewWithCheckBoxes
         }
 
         public List<EntityViewModel<IPortfolioInfo>> DataSource { get; set; }
+
+        private void tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            IInputElement element = sender as IInputElement;
+            if (e.OldValue != null && e.OldValue != e.NewValue)
+            {
+                var source = ((TreeView)e.Source).SelectedItem as EntityViewModel<IPortfolioInfo>;
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+                {
+                   
+                    source.IsChecked = !source.IsChecked;
+                    return;
+                }
+                if (Keyboard.IsKeyDown(Key.Up) || Keyboard.IsKeyDown(Key.Down))
+                {
+                    return;
+                }
+                source.IsChecked = !source.IsChecked;
+            }
+        }
             //public bool? ToggleState (bool? state)
             //{
             //    if (state == null)

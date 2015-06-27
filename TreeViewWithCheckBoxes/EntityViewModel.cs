@@ -94,6 +94,8 @@ namespace TreeViewWithCheckBoxes
 
         public T Entity { get; private set; }
 
+        public bool IsMatched { get; set; }
+
         #region IsChecked
 
         /// <summary>

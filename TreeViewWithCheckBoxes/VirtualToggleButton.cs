@@ -225,8 +225,10 @@ namespace DrWPF.Windows.Controls
                     // ignore alt+space which invokes the system menu
                     if ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) return;
 
+                  
                     UpdateIsChecked(sender as DependencyObject);
                     e.Handled = true;
+                  
 
                 }
                 else if (e.Key == Key.Enter && (bool)(sender as DependencyObject).GetValue(KeyboardNavigation.AcceptsReturnProperty))
