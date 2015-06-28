@@ -136,15 +136,15 @@ namespace TreeViewWithCheckBoxes
                 if (PortfolioList == null)
                     return null;
                 IEnumerable<IGrouping<string, IPortfolioInfo>> query = PortfolioList.GroupBy(_filter);
-                var root = new EntityViewModel<IPortfolioInfo>("Portfolios") { IsInitiallySelected = true };
+                var root = new EntityViewModel<IPortfolioInfo>("Portfolios") { IsInitiallySelected = true, IsExpanded=true, Level = 1};
                 foreach (var group in query)
                 {
                     var key = group.Key;
-                    var portGroup = new EntityViewModel<IPortfolioInfo>(key);
+                    var portGroup = new EntityViewModel<IPortfolioInfo>(key) { IsExpanded = false, Level = 2};
                     root.Children.Add(portGroup);
                     foreach (var portName in group)
                     {
-                        var port = new EntityViewModel<IPortfolioInfo>(portName);
+                        var port = new EntityViewModel<IPortfolioInfo>(portName) { Level = 3 };
                         portGroup.Children.Add(port);
                     }
                 }
@@ -224,8 +224,14 @@ namespace TreeViewWithCheckBoxes
                 var source = ((ContentPresenter)e.Source).Content as EntityViewModel<IPortfolioInfo>;
                 if (source != null)
                 {
-                    source.IsChecked = !source.IsChecked;
-                    //e.Handled = true;
+                    e.Handled = true;
+                    if (source.IsRoot)
+                        return;
+
+                    if (source.IsChecked == null)
+                        source.IsChecked = false;
+                    else
+                        source.IsChecked = !source.IsChecked;                   
                 }
             }
         }

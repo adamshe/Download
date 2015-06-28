@@ -6,7 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!--<ResourceDictionary Source="pack://application:,,,/Resources/ValueConverters.xaml"/>-->
-                <!--<ResourceDictionary Source="pack://application:,,,/Resources/Styles.xaml"/>-->
+                <ResourceDictionary Source="pack://application:,,,/Resources/Styles.xaml"/>
                 <!--<ResourceDictionary Source="pack://application:,,,/Resources/DataTemplates.xaml"/>-->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

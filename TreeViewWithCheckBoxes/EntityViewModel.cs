@@ -11,55 +11,14 @@ namespace TreeViewWithCheckBoxes
         bool? _isChecked = false;
         bool _expanded;
         bool _isMatched = true;
+        int _level;
         EntityViewModel<T> _parent;
         T _entity;
-       // List<EntityViewModel<T>> _list;
+
         
         #endregion // Data
 
         #region CreateFoos
-
-        //public static List<EntityViewModel<T>> CreateFoos()
-        //{
-        //    EntityViewModel<T> root = new EntityViewModel<T>("Weapons")
-        //    {
-        //        IsInitiallySelected = true,
-        //        Children =
-        //        {
-        //            new EntityViewModel<T>("Blades")
-        //            {
-        //                Children =
-        //                {
-        //                    new EntityViewModel<T>("Dagger"),
-        //                    new EntityViewModel<T>("Machete"),
-        //                    new EntityViewModel<T>("Sword"),
-        //                }
-        //            },
-        //            new EntityViewModel<T>("Vehicles")
-        //            {
-        //                Children =
-        //                {
-        //                    new EntityViewModel<T>("Apache Helicopter"),
-        //                    new EntityViewModel<T>("Submarine"),
-        //                    new EntityViewModel<T>("Tank"),                            
-        //                }
-        //            },
-        //            new EntityViewModel<T>("Guns")
-        //            {
-        //                Children =
-        //                {
-        //                    new EntityViewModel<T>("AK 47"),
-        //                    new EntityViewModel<T>("Beretta"),
-        //                    new EntityViewModel<T>("Uzi"),
-        //                }
-        //            },
-        //        }
-        //    };
-
-        //    root.Initialize();
-        //    var list = new List<EntityViewModel<T>> { root };
-        //    return list;
-        //}
 
         public EntityViewModel(string name)
         {
@@ -96,6 +55,10 @@ namespace TreeViewWithCheckBoxes
         public string Name { get; private set; }
 
         public T Entity { get; private set; }
+
+        public int Level { get; set; }
+
+        public bool IsRoot { get { return _parent == null; } }
 
         public bool IsMatched
         {
@@ -134,20 +97,37 @@ namespace TreeViewWithCheckBoxes
                     return;
 
                 _expanded = value;
-                if (_expanded)
-                {
-                    foreach (var child in Children)
-                        child.IsMatched = true;
-                }
+                //if (_expanded)
+                //{
+                //    foreach (var child in Children)
+                //        child.IsMatched = true;
+                //}
                 OnPropertyChanged("IsExpanded");
             }
         }
 
         private bool IsCriteriaMatched(string criteria)
         {
+            string processedCriteria = criteria.Trim();
+            if (String.IsNullOrEmpty(processedCriteria))
+                return true;
+
             var listOfStrings = criteria.Split(new char[] { ';', ',', '-', '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return String.IsNullOrEmpty(criteria) || listOfStrings.Any(s => Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0);//(name.Contains(criteria);
+            return listOfStrings.Any(s => Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0);//(name.Contains(criteria);
+        }
+
+        private bool VisRule(string criteria)
+        {
+            var result = !String.IsNullOrEmpty(criteria);
+            if (Level == 1)
+                result = true;
+            return result;
+        }
+
+        public bool Visible
+        {
+            get { return IsMatched || Level == 1; }
         }
 
         public void ApplyCriteria(string criteria, Stack<EntityViewModel<T>> ancestors)
@@ -158,11 +138,11 @@ namespace TreeViewWithCheckBoxes
                 foreach (var ancestor in ancestors)
                 {
                     ancestor.IsMatched = true;
-                    ancestor.IsExpanded = !String.IsNullOrEmpty(criteria);
+                    ancestor.IsExpanded =  !String.IsNullOrEmpty(criteria);
                 }
             }
             else
-                IsMatched = false;
+                IsMatched = false | Level == 1;
 
             ancestors.Push(this);
             foreach (var child in Children)

@@ -20,7 +20,7 @@
 
             <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
                 <EventSetter Event="MouseLeftButtonUp" Handler="TreeViewItemClick"/>
-                <Setter Property="IsExpanded" Value="True" />
+                <Setter Property="IsExpanded" Value="{Binding Path=IsExpanded, Mode=OneWay}" />
                 <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
                 <Setter Property="KeyboardNavigation.AcceptsReturn" Value="True" />
                 <Setter Property="dw:VirtualToggleButton.IsVirtualToggleButton" Value="True" />
@@ -28,20 +28,59 @@
                 <Setter Property="Visibility" Value="{Binding Path=IsMatched, Mode=OneWay, Converter={StaticResource ResourceKey=boolToVisibility}}"/>
             </Style>
 
-            <HierarchicalDataTemplate  x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
+            <DataTemplate x:Key="level2">
                 <StackPanel Orientation="Horizontal">
-                    <!-- These elements are bound to a FooViewModel object. -->
                     <CheckBox
                     Focusable="False" 
                     IsChecked="{Binding IsChecked}"             
-                    VerticalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Padding="2,4"
                     />
                     <ContentPresenter 
                     Content="{Binding Name, Mode=OneTime}" 
-                    Margin="2,0"
+                    Margin="2,0,2,2"
                     />
                 </StackPanel>
+            </DataTemplate>
+            <HierarchicalDataTemplate  x:Key="Level1" ItemsSource="{Binding Children, Mode=OneTime}" ><!--ItemTemplate="{StaticResource level2}"-->
+                <StackPanel Orientation="Horizontal">
+                    <!-- These elements are bound to a FooViewModel object. -->
+                    <CheckBox
+                    Width="16"
+                    Height="16"
+                    Focusable="False" 
+                    Margin="2,2"
+                    IsChecked="{Binding IsChecked}"             
+                    VerticalAlignment="Top"
+                    />
+                    <ContentPresenter                    
+                    Height="16" 
+                    Content="{Binding Name, Mode=OneTime}" 
+                   
+                    VerticalAlignment="Top"
+                    />
+                    <Border  VerticalAlignment="Top" DockPanel.Dock="Bottom" Style="{StaticResource ResourceKey=searchBox}" Visibility="{Binding IsRoot, Converter={StaticResource boolToVisibility}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image x:Name="SearchBox" Source="/Resources/Images/Search.png" VerticalAlignment="Top"></Image>
+                            <ComboBox  VerticalAlignment="Top" Grid.Column="1"
+                              IsEditable="True"
+                              ItemsSource="{Binding Path=PreviousCriteria, ElementName=ThisAss, Mode=OneWay}"
+                              SelectedItem="{Binding Path=SelectedCriteria, ElementName=ThisAss}"
+                              Text="{Binding Path=CurrentCriteria, ElementName=ThisAss, UpdateSourceTrigger=PropertyChanged}"
+                              local:EventCommand.Event="UIElement.KeyDown"
+                              local:EventCommand.Command="{Binding Path=StoreInPreviousCommand, ElementName=ThisAss,Mode=OneWay}"/>
+                        </Grid>
+                    </Border>
+                    <!--<Border Style="{StaticResource ResourceKey=searchBox}">
+                    <Image x:Name="SearchBox" Source="/Resources/Images/Search.png" Width="16" Height="16" Visibility="{Binding IsRoot, Converter={StaticResource boolToVisibility}}"></Image>
+                    </Border>-->
+                </StackPanel>
             </HierarchicalDataTemplate>
+
         </ResourceDictionary>
     </UserControl.Resources>
     <!--<UserControl.DataContext>
@@ -66,11 +105,11 @@
               x:Name="tree"
               ItemContainerStyle="{StaticResource TreeViewItemStyle}"
               ItemsSource="{Binding Path=Root, Mode=OneTime, ElementName=ThisAss}"
-              ItemTemplate="{StaticResource CheckBoxItemTemplate}"
+              ItemTemplate="{StaticResource Level1}"
               SelectedItemChanged="tree_SelectedItemChanged"
               DockPanel.Dock="Top"
               />
-            <Border DockPanel.Dock="Bottom">
+            <!--<Border DockPanel.Dock="Bottom" >
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -85,7 +124,7 @@
                               local:EventCommand.Event="UIElement.KeyDown"
                               local:EventCommand.Command="{Binding Path=StoreInPreviousCommand, ElementName=ThisAss,Mode=OneWay}"/>
                 </Grid>
-            </Border>
+            </Border>-->
         </DockPanel>
     </Grid>
 </UserControl>
