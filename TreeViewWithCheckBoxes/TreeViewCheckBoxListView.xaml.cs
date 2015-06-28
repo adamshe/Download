@@ -219,14 +219,15 @@ namespace TreeViewWithCheckBoxes
         
         private void TreeViewItemClick(object sender, RoutedEventArgs e)
         {
+            e.Handled = true;
+            if (!(e.OriginalSource is TextBlock))            
+                return;
+
             if (e.Source is ContentPresenter)
             {
                 var source = ((ContentPresenter)e.Source).Content as EntityViewModel<IPortfolioInfo>;
                 if (source != null)
-                {
-                    e.Handled = true;
-                    if (source.IsRoot)
-                        return;
+                {                    
 
                     if (source.IsChecked == null)
                         source.IsChecked = false;
