@@ -22,6 +22,7 @@ namespace TreeViewWithCheckBoxes
         public void InitialControl()
         {
             TreeViewCheckBoxListView view = new TreeViewCheckBoxListView(null);
+            view.GroupMember = "Name";
             view.PortfolioList = Portfolios;
             gridPanel.Children.Add(view);
         }

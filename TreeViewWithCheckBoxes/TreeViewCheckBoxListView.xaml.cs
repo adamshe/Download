@@ -28,12 +28,13 @@ namespace TreeViewWithCheckBoxes
         private readonly ICommand _storeInPreviousCommand;
         private string selectedCriteria = String.Empty;
         private string currentCriteria = String.Empty;
+        private string _groupMember;
         private readonly ObservableCollection<string> _previousCriteria = new ObservableCollection<string>();
         #endregion
 
-        ObservableCollection<EntityViewModel<IPortfolioInfo>> _root;
-        Func<IPortfolioInfo, string> _filter;
-        IEnumerable<IPortfolioInfo> _portfolioList;
+        ObservableCollection<EntityViewModel<object>> _root;
+        Func<object, string> _filter;
+        IEnumerable _portfolioList;
         public static readonly DependencyProperty ItemsSourceProperty =
         DependencyProperty.Register("ItemsSource", typeof(IEnumerable),
         typeof(TreeViewCheckBoxListView), new FrameworkPropertyMetadata(null));
@@ -44,15 +45,15 @@ namespace TreeViewWithCheckBoxes
             set { SetValue(ItemsSourceProperty, value); }
         }
 
-        public TreeViewCheckBoxListView(IEnumerable<IPortfolioInfo> portlist)
+        public TreeViewCheckBoxListView(IEnumerable  portlist)
         {
-            _portfolioList = portlist; 
-            _filter = port => port.Name.Substring(0, port.Name.IndexOf(' '));
+            _portfolioList = portlist;
+            _filter = port => { var propVal = port.GetType().GetProperty(_groupMember).GetValue(port, null).ToString(); 
+                return propVal.Substring(0, propVal.IndexOf(' ')); };
             this.Loaded += TreeViewCheckBoxListView_Loaded;
             _storeInPreviousCommand = new CustomCommand(StoreInPrevious);
             InitializeComponent();
-                      
-           // DataContext = GetList(portList, port => port.Name.Substring(0, port.Name.IndexOf(' ')));
+
         }
 
         private void StoreInPrevious(object dummy)
@@ -79,6 +80,9 @@ namespace TreeViewWithCheckBoxes
             }
         }
 
+        public string GroupMember { get { return _groupMember; } set { _groupMember = value; } }
+
+
         public IEnumerable<string> PreviousCriteria
         {
             get { return _previousCriteria; }
@@ -101,7 +105,7 @@ namespace TreeViewWithCheckBoxes
         private void ApplyFilter()
         {
             foreach (var node in _root)
-                node.ApplyCriteria(CurrentCriteria, new Stack<EntityViewModel<IPortfolioInfo>>());
+                node.ApplyCriteria(CurrentCriteria, new Stack<EntityViewModel<object>>());
         }
 
         void TreeViewCheckBoxListView_Loaded(object sender, RoutedEventArgs e)
@@ -109,10 +113,12 @@ namespace TreeViewWithCheckBoxes
            // WireUpToggleButton();
         }
 
-        public IEnumerable<IPortfolioInfo> PortfolioList
+        public IEnumerable PortfolioList
         {
             get { return _portfolioList; }
-            set { _portfolioList = value;
+            set
+            {
+                _portfolioList = value as IEnumerable;
                 _root = GetList;
                 tree.GetBindingExpression(TreeView.ItemsSourceProperty).UpdateTarget();
                 CommandManager.InvalidateRequerySuggested();
@@ -124,38 +130,38 @@ namespace TreeViewWithCheckBoxes
             get { return _storeInPreviousCommand; }
         }
 
-        public IEnumerable<EntityViewModel<IPortfolioInfo>> Root
+        public IEnumerable<EntityViewModel<object>> Root
         {
             get { return _root; }
         }
 
-        public ObservableCollection<EntityViewModel<IPortfolioInfo>> GetList
+        public ObservableCollection<EntityViewModel<object>> GetList
         {
             get
             {
                 if (PortfolioList == null)
                     return null;
-                IEnumerable<IGrouping<string, IPortfolioInfo>> query = PortfolioList.GroupBy(_filter);
-                var root = new EntityViewModel<IPortfolioInfo>("Portfolios") { IsInitiallySelected = true, IsExpanded=true, Level = 1};
+                IEnumerable<IGrouping<string, object>> query = PortfolioList.OfType<object>().GroupBy(_filter);
+                var root = new EntityViewModel<object>("Portfolios") { IsInitiallySelected = true, IsExpanded = true, Level = 1 };
                 foreach (var group in query)
                 {
                     var key = group.Key;
-                    var portGroup = new EntityViewModel<IPortfolioInfo>(key) { IsExpanded = false, Level = 2};
+                    var portGroup = new EntityViewModel<object>(key) { IsExpanded = false, Level = 2 };
                     root.Children.Add(portGroup);
                     foreach (var portName in group)
                     {
-                        var port = new EntityViewModel<IPortfolioInfo>(portName) { Level = 3 };
+                        var port = new EntityViewModel<object>(portName) { Level = 3 };
                         portGroup.Children.Add(port);
                     }
                 }
 
                 root.Initialize();
-                _root = new ObservableCollection<EntityViewModel<IPortfolioInfo>> { root };
+                _root = new ObservableCollection<EntityViewModel<object>> { root };
                 return _root;
             }           
         }
 
-        private IEnumerable<IPortfolioInfo> SelectedPortfolios
+        private IEnumerable<object> SelectedPortfolios
         {
             get
             {
